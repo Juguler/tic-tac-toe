@@ -1,7 +1,9 @@
+let board = Array(9).fill(null)
 const Gameboard = (() => {
-    let board = ['','','','','','','','',''];
+  let board = Array(9).fill(null)
   
-    const updateBoard = (index, mark) => {
+    const updateBoard = (e,index, mark) => {
+      e.target.innerText = mark
       board[index] = mark;
     };
   
@@ -10,7 +12,7 @@ const Gameboard = (() => {
     };
 
     const checkTie = () => {
-      return board.every(cell => cell !== '');
+      return board.every(cell => cell !== null);
     };
 
     const resetBoard = () => {
@@ -28,11 +30,14 @@ const Gameboard = (() => {
         [0, 4, 8],
         [2, 4, 6]
       ];
-      return winConditions.some(condition => 
-        board[condition[0]] !== '' &&
-        board[condition[0]] === board[condition[1]] &&
-        board[condition[0]] === board[condition[2]]
-      );
+      for(const condition of winConditions){
+        let [a, b, c] = condition
+
+        if(board[a] && (board[a] == board[b] && board[a] == board[c])) {
+            return true
+        }
+      }
+      return false
     };
   
     return {
@@ -55,9 +60,11 @@ const GameController = ((player1, player2) => {
       currentPlayer = currentPlayer === player1 ? player2 : player1;
     };
   
-    const makeMove = (index) => {
-      Gameboard.updateBoard(index, currentPlayer.mark);
-      switchPlayer();
+    const makeMove = (e,index) => {
+      if(!board[index]){
+        Gameboard.updateBoard(e,index, currentPlayer.mark);
+        switchPlayer();
+      }
     };
     
     const getCurrentPlayer = () => {
@@ -67,11 +74,16 @@ const GameController = ((player1, player2) => {
     const getWinnerPlayer = () => {
       return currentPlayer === player1 ? player2 : player1;
     };
+
+    const startWithX = () => {
+      currentPlayer = player1;
+    }
     
     return {
       makeMove,
       getCurrentPlayer,
-      getWinnerPlayer
+      getWinnerPlayer,
+      startWithX
     };
 })(Player('Player with X', 'X'), Player('Player with O', 'O'));
 
@@ -79,20 +91,15 @@ const DisplayController = (() => {
     const gameboardContainer = document.querySelector('#gameBoard');
     const restartButton = document.querySelector('#restartBtn');
     const resultDisplay = document.querySelector('#resultDisplay');
+    let boxes = Array.from(document.getElementsByClassName('box'))
   
     const renderGameboard = () => {
-      gameboardContainer.innerHTML = '';
-      const board = Gameboard.getBoard();
-      board.forEach((cell, index) => {
-        const cellElement = document.createElement('div');
-        cellElement.textContent = cell;
-        cellElement.addEventListener('click', () => {
-          GameController.makeMove(index);
-          renderGameboard();
-          checkGameOver();
-        });
-        gameboardContainer.appendChild(cellElement);
-      });
+      
+      boxes.forEach(box => box.addEventListener('click', (e) => {
+        let index = boxes.indexOf(box);
+        GameController.makeMove(e,index);
+        checkGameOver();
+      }));
     };
   
     const checkGameOver = () => {
@@ -104,13 +111,17 @@ const DisplayController = (() => {
     };
   
     restartButton.addEventListener('click', () => {
-      Gameboard.resetBoard();
-      renderGameboard();
-      resultDisplay.textContent = '';
+      board.fill(null)
+      boxes.forEach( box => {
+        box.innerText = ""
+      })
+      resultDisplay.innerHTML = "Tic Tac Toe"
+      GameController.startWithX()
     });
   
     return {
-      renderGameboard
+      renderGameboard,
+      checkGameOver
     };
 })();
 
